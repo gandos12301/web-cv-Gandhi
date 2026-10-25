@@ -1,0 +1,56 @@
+name: Deploy ke GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Siapkan folder publikasi
+        run: |
+          mkdir _site
+          cp index.html 404.html style.css script.js _site/
+          cp -r assets _site/assets
+          touch _site/.nojekyll
+
+          # Alamat dasar untuk tombol di 404.html:
+          # repo bernama <user>.github.io -> "/", repo lain -> "/<nama-repo>/"
+          REPO="${GITHUB_REPOSITORY#*/}"
+          OWNER_LC="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          REPO_LC="$(echo "${REPO}" | tr '[:upper:]' '[:lower:]')"
+          if [ "${REPO_LC}" = "${OWNER_LC}.github.io" ]; then BASE="/"; else BASE="/${REPO}/"; fi
+          sed -i "s#__BASE__#${BASE}#g" _site/404.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy ke GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
