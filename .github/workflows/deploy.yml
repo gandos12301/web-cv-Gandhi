@@ -27,7 +27,7 @@ jobs:
       - name: Siapkan folder publikasi
         run: |
           mkdir _site
-          cp index.html 404.html style.css script.js _site/
+          cp index.html 404.html catur.html style.css script.js _site/
           cp -r assets _site/assets
           touch _site/.nojekyll
 
